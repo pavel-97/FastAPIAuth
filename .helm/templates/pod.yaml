@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: standalone-pod
+spec:
+  containers:
+  - name: main
+    image: {{ $.Values.image }}  # Helm-шаблонизация, позволяет параметризовать имя образа для контейнера.
+    command: ["tail", "-f", "/dev/null"]
