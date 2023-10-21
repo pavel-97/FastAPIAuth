@@ -10,4 +10,4 @@ COPY requirements.txt .
 COPY ./src .
 RUN pip install -r requirements.txt
 
-CMD [ "uvicorn", "src/main:app", "--port 8000" ]
+CMD [ "uvicorn", "src/main:app"]
