@@ -18,7 +18,7 @@ spec:
       - name: app
         image: {{ .Values.werf.image.app }}
         command:
-          - uvicorn src/main:app
+          - uvicorn app/src/main:app
           - --host 0.0.0.0
           - --port 8000
         ports:
