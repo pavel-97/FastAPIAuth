@@ -1,9 +1,9 @@
-FROM alpine:3.14
+FROM python:3.12
 WORKDIR /app
 
-# Устанавливаем зависимости приложения.
-RUN apk add --no-cache --update nmap-ncat
+ENV PYTHONDONTWRITEBYTECODE 1
+ENV PYTHONUNBUFFERED 1
 
-# Добавляем в образ скрипт для запуска эхо-сервера и устанавливаем разрешение на выполнение.
-COPY start.sh .
-RUN chmod +x start.sh
+COPY requirements.txt .
+COPY src .
+RUN pip install -r requirements.txt
