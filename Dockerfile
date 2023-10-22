@@ -7,6 +7,6 @@ ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 
 COPY requirements.txt .
-COPY main.py .
+COPY src .
 RUN pip install -r requirements.txt
-CMD [ "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+CMD [ "uvicorn", "src/main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]

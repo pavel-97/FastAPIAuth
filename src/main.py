@@ -6,4 +6,4 @@ app = FastAPI()
 
 @app.get('/')
 async def index():
-    return {'Hellow': 'World! Pavel'}
+    return {'Hellow': 'World!'}
