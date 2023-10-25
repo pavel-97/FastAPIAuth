@@ -13,6 +13,6 @@ spec:
         pathType: Prefix
         backend:
           service:
-            name: web
+            name: web-app
             port:
               number: 8000
