@@ -1,0 +1,10 @@
+.env
+
+*/__init__.py
+
+*.yml
+*.yaml
+
+*.ini
+
+*.toml
