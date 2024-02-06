@@ -11,9 +11,9 @@ class ABCRepository(ABC):
     def create(self, *args, **kwargs):
         raise NotImplementedError
     
-    # @abstractmethod
-    # def update(self, *args, **kwargs):
-    #     raise NotImplementedError
+    @abstractmethod
+    def update(self, *args, **kwargs):
+        raise NotImplementedError
     
     # @abstractmethod
     # def delete(self, *args, **kwargs):

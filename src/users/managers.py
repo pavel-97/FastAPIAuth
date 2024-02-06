@@ -1,17 +1,26 @@
 from typing import Optional
 
-from fastapi import HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
+from fastapi import HTTPException
+from fastapi import status
+
+from pydantic import EmailStr
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.models import User
 from src.settings import access_security, refresh_security
+from src.utils.managers import UserManagerABC
 
-from .mixins import UserManagerProtectedMethods
+from . import mixins
 
 
-#TODO
-class UserManager(UserManagerProtectedMethods):
+class UserManager(
+    mixins.UserManagerMixinAuthenticate,
+    mixins.UserManagerMixinRefreshTokens,
+    mixins.UserManagerMixinProtectedMethods,
+    UserManagerABC
+    ):
 
     def __init__(self, data: Optional[OAuth2PasswordRequestForm] = None):
         self.data: OAuth2PasswordRequestForm = data
@@ -19,70 +28,27 @@ class UserManager(UserManagerProtectedMethods):
         self.refresh_security = refresh_security
 
     async def authanticate(self, session: AsyncSession):
-        user = await self._get_user_by_email(email=self.data.username, session=session)
-        
-        if user is None:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail='Invalid email (username) or password')
-        
-        if not self._verify_password(user=user):
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail='Invalid email (username) or password'
-            )
-        
-        refresh_token: str = self._create_refresh_token()
-        user.refresh_token = refresh_token
-        
-        return {
-            'access_token': self._create_access_token(),
-            'refresh_token': refresh_token,
-            'type_token': 'Bearer'
-            }
+        return await super().authanticate(session)
+    
+    async def refresh_tokens(self, refresh_token: str, email: EmailStr, session: AsyncSession):
+        return await super().refresh_tokens(refresh_token, email, session)
+    
+    async def get_user_by_email(self, email: EmailStr, session: AsyncSession) -> User | None:
+        return await super()._get_user_by_email(email, session)
+    
+    async def get_user_by_id(self, id: int, session: AsyncSession) -> User | None:
+        return await super()._get_user_by_id(id, session)
+    
+    async def deactivate_user(self, email: EmailStr, session: AsyncSession):
+        user = await self.get_user_by_email(email=email, session=session)
+        user.is_active = False
+        return user
     
     #TODO
-    async def refresh_tokens(self, refresh_token: str, email: str, session: AsyncSession):
-        user = await self._get_user_by_email(email=email, session=session)
-        
-        if user is None:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail='Invalid email (username) or password')
-        
-        if user.refresh_token != refresh_token:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail='Invalid refresh token',
-            )
-        
-        refresh_token = self.access_security.create_access_token(subject={'username': email})
-        user.refresh_token = refresh_token
-
-        return {
-            'access_token': refresh_token,
-            'refresh_token': self.refresh_security.create_refresh_token(subject={'username': email}),
-            'type_token': 'Bearer'
-            }
-        
-
-    # async def _get_user_by_email(self, email: str, session: AsyncSession) -> Optional[User]:
-    #     stml = select(User).where(User.email == email)
-    #     result = await session.execute(stml)
-    #     result = result.scalar()
-    #     return result
-    
-    # def _verify_password(self, user: User) -> bool:
-    #     return pwd_context.verify(self.data.password, user.hashed_password)
-    
-    # def _create_access_token(self):
-    #     access_token = self.access_security.create_access_token(subject={
-    #         'username': self.data.username
-    #     })
-    #     return access_token
-    
-    # def _create_refresh_token(self):
-    #     refresh_token = self.refresh_security.create_refresh_token(subject={
-    #         'username': self.data.username
-    #     })
-    #     return refresh_token
+    async def grant_admin_privilegios(self, email: EmailStr, user_email: EmailStr, session: AsyncSession):
+        current_user = await self.get_user_by_email(email=email, session=session)
+        if current_user.is_super_user:
+            user = await self.get_user_by_email(email=user_email, session=session)
+            user.role = user.grant_admin_privilegios()
+            return user
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)

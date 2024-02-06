@@ -14,7 +14,7 @@ class User(BaseModel):
     email: EmailStr
     first_name: str | None
     last_name: str | None
-    role: Role
+    role: list[Role]
 
 
 class AuthUser(BaseModel):
@@ -39,12 +39,17 @@ class RegistryUser(BaseModel):
     password: str
     first_name: str | None
     last_name: str | None
-    role: list[Role]
 
 
-class RegistryUser2(BaseModel):
+class RegistryUserDB(BaseModel):
     email: str
     hashed_password: str
     first_name: str | None
     last_name: str | None
     role: list[Role] = [Role.user, ]
+
+
+class UpdateUser(BaseModel):
+    email: str | None
+    first_name: str | None
+    last_name: str | None

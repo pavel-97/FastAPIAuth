@@ -6,6 +6,7 @@ from sqlalchemy import text, String
 from sqlalchemy.dialects.postgresql import ARRAY
 
 from .settings import Base
+from . import schemas
 
 
 class Role(str, enum.Enum):
@@ -29,4 +30,19 @@ class User(Base):
     update_at: Mapped[datetime.datetime] = mapped_column(
         server_default=text("TIMEZONE('utc', now())"),
         onupdate=datetime.datetime.utcnow)
+    
+    def read_model(self):
+        return schemas.User(**self.__dict__)
+    
+    @property
+    def is_super_user(self) -> bool:
+        return Role.super_user in self.role
+
+    @property
+    def is_admin(self) -> bool:
+        return Role.admin in self.role
+    
+    def grant_admin_privilegios(self):
+        if Role.admin not in self.role:
+            return {*self.role, Role.admin}
     

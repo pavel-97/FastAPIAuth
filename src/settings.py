@@ -9,7 +9,9 @@ from sqlalchemy.orm import DeclarativeBase
 
 from starlette_admin.contrib.sqla import Admin
 
-from .env import POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB, SECRET_KEY
+from celery import Celery
+
+from .env import POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB, SECRET_KEY, RABBITMQ_DEFAULT_PASS, RABBITMQ_DEFAULT_USER
 
 
 DATABASE_URL: Final = f'postgresql+asyncpg://{POSTGRES_USER}:{POSTGRES_PASSWORD}@db_user/{POSTGRES_DB}'
@@ -19,6 +21,12 @@ async_engine = create_async_engine(DATABASE_URL)
 async_engine.echo = True
 
 async_session_maker = async_sessionmaker(async_engine, expire_on_commit=False)
+
+
+#-----------------------------------------------------------------------------------------------------------
+
+
+celery = Celery('tasks', broker=f'amqp://{RABBITMQ_DEFAULT_USER}:{RABBITMQ_DEFAULT_PASS}@rabbitmq', backend='redis://redis')
 
 
 #-----------------------------------------------------------------------------------------------------------

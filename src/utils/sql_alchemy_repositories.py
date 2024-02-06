@@ -1,6 +1,6 @@
 from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, insert
+from sqlalchemy import select, insert, update
 
 from pydantic import BaseModel
 
@@ -8,6 +8,7 @@ from . repositories import ABCRepository
 
 
 class SQLAchemyReposytory(ABCRepository):
+
     model: DeclarativeBase
 
     def __init__(self, session: AsyncSession) -> None:
@@ -19,6 +20,13 @@ class SQLAchemyReposytory(ABCRepository):
         return result
     
     async def create(self, schema: BaseModel):
-        stml = insert(self.model).values(**schema.dict()).returning(self.model)
-        res = await self.session.execute(stml)
-        return res.scalar_one()
+        new_obj = self.model(**schema.dict())
+        self.session.add(new_obj)
+        return new_obj
+    
+    async def update(self, email: str, schema: BaseModel):
+        stml = update(self.model).where(self.model.email == email).values(**schema.dict(exclude_none=True)).returning(self.model)
+        result = (await self.session.execute(stml)).scalar_one()
+        return result
+    
+    
