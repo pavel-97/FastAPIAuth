@@ -1,11 +1,16 @@
+#Test update user
+
 from httpx import AsyncClient
 
 from ..utils import TestAccessUser
 
 
 class TestUpdateUser(TestAccessUser):
+    '''Class test update user'''
 
     async def test_update_user(self, async_client: AsyncClient):
+        '''Authorized client updates profile'''
+
         response_token = await self.test_auth(async_client)
         token: str = response_token.json().get('access_token')
         
@@ -18,6 +23,8 @@ class TestUpdateUser(TestAccessUser):
         assert response.status_code == 200
 
     async def test_update_user_unauth(self, async_client: AsyncClient):
+        '''Unauthorized user dont update profile'''
+
         response = await async_client.patch('/profile',  
                                             json={
                                                 'first_name': 'test_name_1', 
@@ -26,6 +33,8 @@ class TestUpdateUser(TestAccessUser):
         assert response.status_code == 401
     
     async def test_update_user_by_wrong_data(self, async_client: AsyncClient):
+        '''Authorized user updates profile by wrong data'''
+
         response_token = await self.test_auth(async_client)
         token: str = response_token.json().get('access_token')
         
@@ -37,3 +46,4 @@ class TestUpdateUser(TestAccessUser):
                                                 'wrong_key': 'some_data'
                                                 })
         assert response.status_code == 200
+        

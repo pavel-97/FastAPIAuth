@@ -1,3 +1,5 @@
+#Views
+
 from fastapi import FastAPI, Depends
 from fastapi import status
 
@@ -7,13 +9,15 @@ from sqlalchemy.orm import aliased
 
 from src.services.users import UserService
 
+from src.utils.unitofworks import UnitOfWork, AsyncUnitOfWork
+
 from . import dependencies
 from . import schemas
 from . import settings
 from . import models
 from . import admin
 
-from . import tasks
+from src.repositories.users import UserRepository
 
 
 app = FastAPI()
@@ -21,18 +25,24 @@ app = FastAPI()
 
 @app.post('/login', response_model=schemas.AuthUserResponse)
 async def authenticate_user(form_data: dependencies.OAuth2Dep, uow: dependencies.UOWDep):
+    '''Authorization for microservices'''
+
     result = await UserService().authenticate(uow=uow, form_data=form_data)
     return result
 
 
 @app.post('/registry')
-async def registry(registry_user: schemas.RegistryUser):
-    tasks.registry_task.delay(data=registry_user.dict())
+def registry(registry_user: schemas.RegistryUser, uow: UnitOfWork = Depends()):
+    '''Registration user'''
+    
+    UserService().registry(uow=uow, registry_user=registry_user.dict())
     return {'status': status.HTTP_200_OK}
 
 
 @app.post('/refresh', response_model=schemas.RefreshTokensResponse)
 async def refresh_tokens(refresh_token: str, credentials: dependencies.JWTAuthCredentialsRefresh, uow: dependencies.UOWDep):
+    '''Get refresh token to update access token'''
+    
     email: str = credentials.subject.get('username')
     result = await UserService().refresh_tokens(uow=uow, email=email, refresh_token=refresh_token)
     return result
@@ -40,6 +50,8 @@ async def refresh_tokens(refresh_token: str, credentials: dependencies.JWTAuthCr
 
 @app.get('/profile', response_model=schemas.User)
 async def token_protected(credentials: dependencies.JWTAuthCredentials, uow: dependencies.UOWDep):
+    '''Get data current user'''
+    
     email: str = credentials.subject.get('username')
     user = await UserService().get_user_by_email(uow=uow, email=email)
     return user
@@ -47,6 +59,8 @@ async def token_protected(credentials: dependencies.JWTAuthCredentials, uow: dep
 
 @app.patch('/profile', response_model=schemas.User)
 async def update_profile(update_user: schemas.UpdateUser, credentials: dependencies.JWTAuthCredentials, uow: dependencies.UOWDep):
+    '''Update data current user'''
+    
     result = await UserService().update_user(
         uow=uow, 
         email=credentials.subject.get('username'),
@@ -57,6 +71,8 @@ async def update_profile(update_user: schemas.UpdateUser, credentials: dependenc
 
 @app.delete('/profile', response_model=schemas.User)
 async def delete_user(credentials: dependencies.JWTAuthCredentials, uow: dependencies.UOWDep):
+    '''Delete current user'''
+    
     result = await UserService().delete_user(
         uow=uow,
         email=credentials.subject.get('username')
@@ -64,14 +80,27 @@ async def delete_user(credentials: dependencies.JWTAuthCredentials, uow: depende
     return result
 
 
-#TODO
 @app.patch('/grant_admin_privilegios')
 async def grant_admin_privilegios(credentials: dependencies.JWTAuthCredentials, uow: dependencies.UOWDep, user_email: str):
+    '''Grant admin privilegios for user'''
+    
     result = await UserService().grant_admin_privilegios(
         uow=uow, 
         email=credentials.subject.get('username'),
         user_email=user_email
         )
+    return result
+
+
+@app.patch('/revoke_admin_privilegios')
+async def revoke_admin_privilegios(credentials: dependencies.JWTAuthCredentials, uow: dependencies.UOWDep, user_email: str):
+    '''Revoke admin privilegios for user'''
+    
+    result = await UserService().revoke_admin_privilegios(
+        uow=uow,
+        email=credentials.subject.get('username'),
+        user_email=user_email
+    )
     return result
 
 

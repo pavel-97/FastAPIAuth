@@ -1,3 +1,5 @@
+#Models
+
 import datetime
 import enum
 
@@ -10,12 +12,16 @@ from . import schemas
 
 
 class Role(str, enum.Enum):
+    '''Roles for User model'''
+    
     super_user = 'super_user'
     admin = 'admin'
     user = 'user'
 
 
 class User(Base):
+    '''Table user'''
+    
     __tablename__ = 'users'
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -32,17 +38,32 @@ class User(Base):
         onupdate=datetime.datetime.utcnow)
     
     def read_model(self):
+        '''Convert user object to pydantic object'''
+        
         return schemas.User(**self.__dict__)
     
     @property
     def is_super_user(self) -> bool:
+        '''Check role'''
+        
         return Role.super_user in self.role
 
     @property
     def is_admin(self) -> bool:
+        '''Check role'''
+        
         return Role.admin in self.role
     
     def grant_admin_privilegios(self):
+        '''Add role admin to user'''
+        
         if Role.admin not in self.role:
             return {*self.role, Role.admin}
+        return {*self.role}
     
+    def revoke_admin_privilegios(self):
+        '''Delete role admin from user'''
+
+        if Role.admin in self.role:
+            self.role.remove(Role.admin)
+        return {*self.role}

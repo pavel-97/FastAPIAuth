@@ -1,3 +1,5 @@
+#Test schemas
+
 from pydantic import BaseModel
 
 from src.models import Role
@@ -9,3 +11,4 @@ class TestSuperUser(BaseModel):
     first_name: str | None
     last_name: str | None
     role: list[Role]
+    

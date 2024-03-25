@@ -1,9 +1,13 @@
+#Settins app
+
 from typing import Final
 
 from passlib.context import CryptContext
 
 from fastapi_jwt import JwtAccessBearer, JwtRefreshBearer
 
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 from sqlalchemy.orm import DeclarativeBase
 
@@ -16,11 +20,19 @@ from .env import POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB, SECRET_KEY, RABB
 
 DATABASE_URL: Final = f'postgresql+asyncpg://{POSTGRES_USER}:{POSTGRES_PASSWORD}@db_user/{POSTGRES_DB}'
 
+DATABASE_URL_2: Final = f'postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@db_user/{POSTGRES_DB}'
+
+
+#-----------------------------------------------------------------------------------------------------------
+
+
+engine = create_engine(DATABASE_URL_2)
 
 async_engine = create_async_engine(DATABASE_URL)
 async_engine.echo = True
 
 async_session_maker = async_sessionmaker(async_engine, expire_on_commit=False)
+session_maker = sessionmaker(engine, expire_on_commit=False)
 
 
 #-----------------------------------------------------------------------------------------------------------
@@ -39,6 +51,8 @@ admin = Admin(engine=async_engine, title='Example: SQLAlchemy')
 
 
 async def get_async_session():
+    '''Async func for get session object'''
+    
     async with async_session_maker() as session:
         yield session
 
@@ -57,6 +71,8 @@ pwd_context = CryptContext(schemes=['bcrypt'], deprecated='auto')
 
 
 def get_password_hash(password: str) -> str:
+    '''Func for get hash'''
+
     return pwd_context.hash(password)
 
 
@@ -64,5 +80,7 @@ def get_password_hash(password: str) -> str:
 
 
 class Base(DeclarativeBase):
+    '''Base model for all models in app'''
+    
     ...
     

@@ -1,18 +1,27 @@
+#Base repository
+
 from abc import ABC, abstractmethod
 
 
 class ABCRepository(ABC):
-    
-    @abstractmethod
+    '''Abstract class'''
+
+    # @abstractmethod
     def get(self, *args, **kwargs):
+        '''Method without realization'''
+
         raise NotImplementedError
     
-    @abstractmethod
+    # @abstractmethod
     def create(self, *args, **kwargs):
+        '''Method without realization'''
+
         raise NotImplementedError
     
-    @abstractmethod
+    # @abstractmethod
     def update(self, *args, **kwargs):
+        '''Method without realization'''
+
         raise NotImplementedError
     
     # @abstractmethod

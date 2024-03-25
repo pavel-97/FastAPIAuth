@@ -1,9 +1,12 @@
+#Test utils
+
 import pytest
 
 from httpx import AsyncClient
 
 
 class TestAccessUser:
+    
     @pytest.mark.usefixtures('registry')
     async def test_auth(self, async_client: AsyncClient):
         response = await async_client.post('/login', data={
