@@ -2,6 +2,8 @@
 
 from fastapi.security import OAuth2PasswordRequestForm
 
+from pydantic import EmailStr
+
 from src.settings import get_password_hash
 from src.schemas import RegistryUserDB
 from src.schemas import AuthUserResponse, RefreshTokensResponse
@@ -20,8 +22,8 @@ class UserService:
         
         with uow:
             hashed_password: str = get_password_hash(registry_user.pop('password'))
-            registry_user = RegistryUserDB(hashed_password=hashed_password, **registry_user)
-            result = UserRepository(session=uow.session).create(schema=registry_user)
+            registry_user_db = RegistryUserDB(hashed_password=hashed_password, **registry_user)
+            result = UserRepository(session=uow.session).create(schema=registry_user_db)
             uow.commit()
         return result.read_model()
     
@@ -41,14 +43,14 @@ class UserService:
             await uow.commit()
         return AuthUserResponse(**result)
         
-    async def get_user_by_email(self, uow: AsyncUnitOfWork, email: str):
+    async def get_user_by_email(self, uow: AsyncUnitOfWork, email: EmailStr):
         '''Method returns user from DB by email'''
 
         async with uow:
             user = (await UserManager().get_user_by_email(email=email, session=uow.session)).read_model()
         return user
 
-    async def refresh_tokens(self, uow: AsyncUnitOfWork, email: str, refresh_token: str):
+    async def refresh_tokens(self, uow: AsyncUnitOfWork, email: EmailStr, refresh_token: str):
         '''Method refreshs, updates access and refresh tokens'''
 
         async with uow:
@@ -60,14 +62,14 @@ class UserService:
             await uow.commit()
         return RefreshTokensResponse(**refresh_tokens)
     
-    async def delete_user(self, uow: AsyncUnitOfWork, email: str):
+    async def delete_user(self, uow: AsyncUnitOfWork, email: EmailStr):
         '''Method sets field is_active false for some user in DB'''
 
         async with uow:
             user = (await UserManager().deactivate_user(email=email, session=uow.session)).read_model()
         return user
     
-    async def grant_admin_privilegios(self, uow: AsyncUnitOfWork, email: str, user_email: str):
+    async def grant_admin_privilegios(self, uow: AsyncUnitOfWork, email: EmailStr, user_email: EmailStr):
         '''Method grants admin privilegios for some user in DB'''
 
         async with uow:
@@ -75,7 +77,7 @@ class UserService:
             await uow.commit()
         return user
     
-    async def revoke_admin_privilegios(self, uow: AsyncUnitOfWork, email: str, user_email: str):
+    async def revoke_admin_privilegios(self, uow: AsyncUnitOfWork, email: EmailStr, user_email: EmailStr):
         '''Method revokes admin privilegios for some user in DB'''
 
         async with uow:

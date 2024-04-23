@@ -5,7 +5,7 @@ from typing import Annotated
 from fastapi import Depends, Security
 from fastapi.security import OAuth2PasswordRequestForm
 
-from fastapi_jwt import JwtAuthorizationCredentials
+from fastapi_jwt import JwtAuthorizationCredentials # type: ignore [import-untyped]
 
 from src.utils.unitofworks import AsyncUnitOfWork
 

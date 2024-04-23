@@ -1,26 +1,27 @@
 #Views
 
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI
 from fastapi import status
 
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func, cast, Integer, desc
-from sqlalchemy.orm import aliased
+from pydantic import EmailStr
 
 from src.services.users import UserService
 
-from src.utils.unitofworks import UnitOfWork, AsyncUnitOfWork
-
 from . import dependencies
 from . import schemas
-from . import settings
-from . import models
 from . import admin
-
-from src.repositories.users import UserRepository
+from . tasks import registry_task
 
 
 app = FastAPI()
+
+
+@app.post('/registry')
+def registry(registry_user: schemas.RegistryUser):
+    '''Registration user'''
+    
+    registry_task.delay(registry_user.dict())
+    return status.HTTP_200_OK
 
 
 @app.post('/login', response_model=schemas.AuthUserResponse)
@@ -31,19 +32,11 @@ async def authenticate_user(form_data: dependencies.OAuth2Dep, uow: dependencies
     return result
 
 
-@app.post('/registry')
-def registry(registry_user: schemas.RegistryUser, uow: UnitOfWork = Depends()):
-    '''Registration user'''
-    
-    UserService().registry(uow=uow, registry_user=registry_user.dict())
-    return {'status': status.HTTP_200_OK}
-
-
 @app.post('/refresh', response_model=schemas.RefreshTokensResponse)
 async def refresh_tokens(refresh_token: str, credentials: dependencies.JWTAuthCredentialsRefresh, uow: dependencies.UOWDep):
     '''Get refresh token to update access token'''
     
-    email: str = credentials.subject.get('username')
+    email: EmailStr = credentials.subject.get('username')
     result = await UserService().refresh_tokens(uow=uow, email=email, refresh_token=refresh_token)
     return result
 
@@ -52,7 +45,7 @@ async def refresh_tokens(refresh_token: str, credentials: dependencies.JWTAuthCr
 async def token_protected(credentials: dependencies.JWTAuthCredentials, uow: dependencies.UOWDep):
     '''Get data current user'''
     
-    email: str = credentials.subject.get('username')
+    email: EmailStr = credentials.subject.get('username')
     user = await UserService().get_user_by_email(uow=uow, email=email)
     return user
 
@@ -81,7 +74,7 @@ async def delete_user(credentials: dependencies.JWTAuthCredentials, uow: depende
 
 
 @app.patch('/grant_admin_privilegios')
-async def grant_admin_privilegios(credentials: dependencies.JWTAuthCredentials, uow: dependencies.UOWDep, user_email: str):
+async def grant_admin_privilegios(credentials: dependencies.JWTAuthCredentials, uow: dependencies.UOWDep, user_email: EmailStr):
     '''Grant admin privilegios for user'''
     
     result = await UserService().grant_admin_privilegios(
@@ -93,7 +86,7 @@ async def grant_admin_privilegios(credentials: dependencies.JWTAuthCredentials, 
 
 
 @app.patch('/revoke_admin_privilegios')
-async def revoke_admin_privilegios(credentials: dependencies.JWTAuthCredentials, uow: dependencies.UOWDep, user_email: str):
+async def revoke_admin_privilegios(credentials: dependencies.JWTAuthCredentials, uow: dependencies.UOWDep, user_email: EmailStr):
     '''Revoke admin privilegios for user'''
     
     result = await UserService().revoke_admin_privilegios(
@@ -103,40 +96,5 @@ async def revoke_admin_privilegios(credentials: dependencies.JWTAuthCredentials,
     )
     return result
 
-
-#TODO
-@app.get('/users')
-async def get_all_users(session: AsyncSession = Depends(settings.get_async_session)):
-    # async with session:
-    #     stml = select(
-    #         cast(func.avg(models.User.id), Integer).label('avg')
-    #         )
-    #     res = await session.execute(stml)
-    #     res = res.scalars().all()
-
-    async with session:
-        u = aliased(models.User)
-        subq = (
-            select(
-                u.id,
-                u.email,
-                u.create_at,
-                func.avg(u.id).over(partition_by=u.id).label('n')
-            )
-        )
-        cte = (
-            select(
-                subq.c.id,
-                subq.c.email,
-                subq.c.n
-            ).cte('user2')
-        )
-        query = select(cte).order_by(desc(cte.c.n))
-        res = await session.execute(query)
-    # res = res.scalars()
-    response = [(i.id, i.email, i.n) for i in res]
-    # print(res[0])
-    # return {'users': res}
-    return {'result': response}
 
 admin.admin.mount_to(app)

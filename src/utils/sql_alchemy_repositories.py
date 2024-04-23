@@ -1,10 +1,14 @@
 #SQLAlchemy reposytory
 
-from sqlalchemy.orm import DeclarativeBase, Session
+from typing import Type
+
+from sqlalchemy.orm import Session
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, insert, update
 
 from pydantic import BaseModel
+
+from src.models import Base
 
 from . repositories import ABCRepository
 
@@ -12,7 +16,7 @@ from . repositories import ABCRepository
 class SQLAlchemyReposytory(ABCRepository):
     '''Class SQLAlchemy Repository works with BD through SQLAlchemy'''
 
-    model: DeclarativeBase
+    model: Type[Base]
 
     def __init__(self, session: Session) -> None:
         self.session: Session = session
@@ -28,7 +32,7 @@ class SQLAlchemyReposytory(ABCRepository):
 class AsyncSQLAlchemyReposytory(ABCRepository):
     '''Class Async SQLAlchemy Repository works with BD through SQLAlchemy'''
 
-    model: DeclarativeBase
+    model: Type[Base]
 
     def __init__(self, session: AsyncSession) -> None:
         '''Constructor'''
@@ -54,7 +58,10 @@ class AsyncSQLAlchemyReposytory(ABCRepository):
     async def update(self, email: str, schema: BaseModel):
         '''Method updates object in DB'''
 
-        stml = update(self.model).where(self.model.email == email).values(**schema.dict(exclude_none=True)).returning(self.model)
+        stml = (update(self.model)
+                .where(self.model.email == email) # type: ignore [attr-defined]
+                .values(**schema.dict(exclude_none=True))
+                .returning(self.model)) # type: ignore [attr-defined]
         result = (await self.session.execute(stml)).scalar_one()
         return result
     

@@ -19,18 +19,18 @@ class UserManagerMixinAuthenticate:
     async def authanticate(self, session: AsyncSession) -> dict:
         '''Method authorizates user'''
 
-        user = await self._get_user_by_email(email=self.data.username, session=session)
+        user = await self._get_user_by_email(email=self.data.username, session=session) # type: ignore [attr-defined] 
         
-        if user is None or not self._verify_password(user=user):
+        if user is None or not self._verify_password(user=user): # type: ignore [attr-defined]
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail='Invalid email (username) or password')
                 
-        refresh_token: str = self._create_refresh_token()
+        refresh_token: str = self._create_refresh_token() # type: ignore [attr-defined]
         user.refresh_token = refresh_token
         
         return {
-            'access_token': self._create_access_token(),
+            'access_token': self._create_access_token(), # type: ignore [attr-defined]
             'refresh_token': refresh_token,
             'type_token': 'Bearer'
             }
@@ -42,14 +42,14 @@ class UserManagerMixinRefreshTokens:
     async def refresh_tokens(self, refresh_token: str, email: EmailStr, session: AsyncSession) -> dict:
         '''Method refreshs (updates) access and refresh tokens'''
 
-        user = await self._get_user_by_email(email=email, session=session)
+        user = await self._get_user_by_email(email=email, session=session) # type: ignore [attr-defined]
         
         if user is None or user.refresh_token != refresh_token:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail='Invalid refresh token')
         
-        access_token, refresh_token = self.create_access_refresh_tokens(data={'username': email})
+        access_token, refresh_token = self.create_access_refresh_tokens(data={'username': email}) # type: ignore [attr-defined]
         user.refresh_token = refresh_token
 
         return {
@@ -58,18 +58,18 @@ class UserManagerMixinRefreshTokens:
             'type_token': 'Bearer'
             }
     
-    def create_access_refresh_tokens(self, data: dict) -> tuple[str]:
+    def create_access_refresh_tokens(self, data: dict) -> tuple[str, str]:
         '''Method return access and refresh tokens'''
 
-        access_token: str = self.access_security.create_access_token(subject=data)
-        refresh_token: str = self.refresh_security.create_refresh_token(subject=data)
+        access_token: str = self.access_security.create_access_token(subject=data) # type: ignore [attr-defined]
+        refresh_token: str = self.refresh_security.create_refresh_token(subject=data) # type: ignore [attr-defined]
         return access_token, refresh_token
     
 
 class UserManagerMixinProtectedMethods:
     '''Class mixin adds protected methods'''
 
-    async def _get_user_by_email(self, email: EmailStr, session: AsyncSession) -> Optional[User]:
+    async def _get_user_by_email(self, email: EmailStr, session: AsyncSession):
         '''Protected method to get user by email'''
 
         stml = select(User).where(and_(User.email == email, User.is_active == True))
@@ -87,7 +87,7 @@ class UserManagerMixinProtectedMethods:
     def _verify_password(self, user: User) -> bool:
         '''Protected method to check password'''
 
-        return pwd_context.verify(self.data.password, user.hashed_password)
+        return pwd_context.verify(self.data.password, user.hashed_password) # type: ignore
     
     def _create_access_token(self):
         '''Protected method to create access token'''

@@ -26,21 +26,21 @@ class UserManager(
     def __init__(self, data: Optional[OAuth2PasswordRequestForm] = None):
         '''Constructor'''
 
-        self.data: OAuth2PasswordRequestForm = data
+        self.data: Optional[OAuth2PasswordRequestForm] = data
         self.access_security = access_security
         self.refresh_security = refresh_security
 
     async def authanticate(self, session: AsyncSession):
         '''Method respons of authorization user'''
         
-        return await super().authanticate(session)
+        return await super().authanticate(session) # type: ignore
     
     async def refresh_tokens(self, refresh_token: str, email: EmailStr, session: AsyncSession):
         '''Method response of refresh (update) tokens'''
         
         return await super().refresh_tokens(refresh_token, email, session)
     
-    async def get_user_by_email(self, email: EmailStr, session: AsyncSession) -> User | None:
+    async def get_user_by_email(self, email: EmailStr, session: AsyncSession) -> User:
         '''Method returns user from DB'''
         
         return await super()._get_user_by_email(email, session)

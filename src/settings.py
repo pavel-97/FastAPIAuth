@@ -1,10 +1,10 @@
-#Settins app
+#Settings app
 
 from typing import Final
 
-from passlib.context import CryptContext
+from passlib.context import CryptContext # type: ignore [import-untyped]
 
-from fastapi_jwt import JwtAccessBearer, JwtRefreshBearer
+from fastapi_jwt import JwtAccessBearer, JwtRefreshBearer # type: ignore [import-untyped]
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -13,7 +13,7 @@ from sqlalchemy.orm import DeclarativeBase
 
 from starlette_admin.contrib.sqla import Admin
 
-from celery import Celery
+from celery import Celery # type: ignore [import-untyped]
 
 from .env import POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB, SECRET_KEY, RABBITMQ_DEFAULT_PASS, RABBITMQ_DEFAULT_USER
 
